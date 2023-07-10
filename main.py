@@ -6,16 +6,16 @@ pygame.init()
 pygame.font.init()
 font = pygame.font.SysFont("comicsans", 30)
 monitor_size = [pygame.display.Info().current_w, pygame.display.Info().current_h]
-
+# you can change the configuration down below
 player_width = 100
 player_height = 60
 player_velocity = 6
 bullet_width = 6
 bullet_height = 10
-projectile_width = 50
-projectile_height = 50
+projectile_width = 75
+projectile_height = 75
 number_of_projectiles = 4
-
+# end
 pygame.display.set_caption("Galactica game")
 img = pygame.transform.scale(pygame.image.load('resources/field.jpg'),
                              (monitor_size[0], monitor_size[1]))
@@ -28,10 +28,10 @@ class Ship:
         self.x = x
         self.y = y
 
-    def collide(self, x3, y3, vel):
-        dis = abs(self.y + player_height // 2 - y3 - vel)
-        if dis <= projectile_height and self.x - player_width // 2 <= x3 <= self.x + player_width:
-            return True
+    def collide(self, x3, y3):
+        dis = abs(self.y + player_height // 2 - y3)
+        con = self.x - player_width // 2 <= x3 <= self.x + player_width
+        return (dis <= projectile_height or dis <= player_height) and con
 
 
 class Bullet:
@@ -44,8 +44,8 @@ class Bullet:
 
     def collide_projectile(self, x3, y3):
         dis = abs(self.y - y3)
-        if x3 <= self.x <= x3 + projectile_width and dis <= projectile_height:
-            return True
+        con = x3 <= self.x <= x3 + projectile_width
+        return con and dis <= projectile_height
 
 
 class Projectile:
@@ -62,10 +62,14 @@ class Projectile:
 def draw(x, y, x2, y2, y3, win, elapsed_time, projectiles, all_smashed_projectiles, width):
     time_text = font.render(f"Time: {round(elapsed_time)}s", True, "white")
     score = font.render(f"Score : {all_smashed_projectiles}", True, "red")
+    smashing_average = font.render(f"Smashing Average : {round(all_smashed_projectiles / elapsed_time, 2)} p/s",
+                                   True, "green")
     win.blit(img, (0, 0))
     win.blit(ship_img, (x, y))
     win.blit(time_text, (0, 0))
     win.blit(score, (width - score.get_width(), 0))
+    win.blit(smashing_average,
+             (width // 2 - smashing_average.get_width() // 2, 0))
     bullet = pygame.Rect(x2, y2, bullet_width, bullet_height)
     pygame.draw.rect(win, "white", bullet)
     for projectile in projectiles:
@@ -75,35 +79,34 @@ def draw(x, y, x2, y2, y3, win, elapsed_time, projectiles, all_smashed_projectil
 
 def main():
     run = True
+# you can change the size of the first screen
     width, height = 1000, 667
+# end
     screen = pygame.display.set_mode((width, height))
     full_screen = True
-
+    clock = pygame.time.Clock()
+    start_time = time.time()
     x = width // 2
     y = height - player_height
-
     x2 = x + player_width // 2 - bullet_width + 3
     y2 = y
-    bullet_velocity = 20
-
     x3 = 0
     y3 = 0
     projectiles = []
-    projectile_velocity = 1
     all_smashed_projectiles = 0
     smashed_projectile = 0
-
-    clock = pygame.time.Clock()
-    start_time = time.time()
-    t = 30
-    p = 10
+# you can change the configuration down below
+    bullet_velocity = 20
+    projectile_velocity = 1
+    time_add_projectile_velocity = 20
+    projectile_required_add_bullet_velocity = 10
+# end
     while run:
         clock.tick(90)
         elapsed_time = time.time() - start_time
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
                 run = False
                 break
             if event.type == pygame.KEYDOWN:
@@ -125,7 +128,8 @@ def main():
 
         if y3 == 0:
             for _ in range(number_of_projectiles):
-                x3 = random.randint(projectile_width, width - projectile_width)
+                x3 = random.randint(projectile_width + player_width // 2,
+                                    width - projectile_width - player_width // 2)
                 projectile = Projectile(x3, y3)
                 projectiles.append(projectile)
 
@@ -140,7 +144,7 @@ def main():
             y += player_velocity
 
         for i in projectiles:
-            if ship.collide(i.x, y3, projectile_velocity):
+            if ship.collide(i.x, y3):
                 text = font.render(f"You lost you can restart again in 5s ", True, "white")
                 time_spent = font.render(f"You lasted {round(elapsed_time)}s", True, "blue")
                 record = font.render(f"You destroyed {round(all_smashed_projectiles)} projectiles", True, "red")
@@ -152,7 +156,7 @@ def main():
                                      height // 2 - record.get_height() + text.get_height() + time_spent.get_height()))
                 pygame.display.update()
                 pygame.time.delay(5000)
-                pygame.quit()
+                run = False
             if bullet.collide_projectile(i.x, y3):
                 projectiles.remove(i)
                 smashed_projectile += 1
@@ -166,18 +170,20 @@ def main():
             smashed_projectile = 0
             projectiles.clear()
             for _ in range(number_of_projectiles):
-                x3 = random.randint(projectile_width, width - projectile_width)
+                x3 = random.randint(projectile_width + player_width // 2,
+                                    width - projectile_width - player_width // 2)
                 projectile = Projectile(x3, y3)
                 projectiles.append(projectile)
-        if elapsed_time >= t:
+        if elapsed_time >= time_add_projectile_velocity:
             projectile_velocity += 0.5
-            t += 30
-        if all_smashed_projectiles >= p:
+            time_add_projectile_velocity += time_add_projectile_velocity
+        if all_smashed_projectiles >= projectile_required_add_bullet_velocity:
             bullet_velocity += 2
-            p += 10
+            projectile_required_add_bullet_velocity += projectile_required_add_bullet_velocity
         y2 -= bullet_velocity
         y3 += projectile_velocity
         draw(x, y, x2, y2, y3, screen, elapsed_time, projectiles, all_smashed_projectiles, width)
+    pygame.quit()
 
 
 if __name__ == "__main__":
