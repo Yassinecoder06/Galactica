@@ -95,6 +95,8 @@ def pause(win, width, height):
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_c:
                     paused = False
+                if event.key == pygame.K_q:
+                    pygame.quit()
         pause_text = font2.render("Pause", True, "white")
         continue_text = font.render("press c to continue", True, "white")
         win.blit(pause_text, (width // 2 - pause_text.get_width() // 2,
@@ -152,6 +154,8 @@ def main():
                 if event.key == pygame.K_p:
                     pause(screen, width, height)
                     elapsed_time -= pause(screen, width, height)
+                if event.key == pygame.K_q:
+                    run = False
 
         ship = Ship(x, y)
         bullet = Bullet(x2, y2)
