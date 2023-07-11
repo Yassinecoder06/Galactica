@@ -1,10 +1,10 @@
 import pygame
-import time
 import random
 
 pygame.init()
 pygame.font.init()
-font = pygame.font.SysFont("comicsans", 30)
+font = pygame.font.SysFont("comicsansms", 30)
+font2 = pygame.font.SysFont("comicsansms", 60)
 monitor_size = [pygame.display.Info().current_w, pygame.display.Info().current_h]
 # you can change the configuration down below
 player_width = 100
@@ -12,15 +12,21 @@ player_height = 60
 player_velocity = 6
 bullet_width = 6
 bullet_height = 10
-projectile_width = 75
-projectile_height = 75
-number_of_projectiles = 4
+projectile_width = 60
+projectile_height = 60
+number_of_projectiles = 5
+fps = 60
+time_to_restart_the_game = 10000  # milliseconds
 # end
 pygame.display.set_caption("Galactica game")
 img = pygame.transform.scale(pygame.image.load('resources/field.jpg'),
                              (monitor_size[0], monitor_size[1]))
 ship_img = pygame.transform.scale(pygame.image.load('resources/space_ship.png'),
                                   (player_width, player_height))
+pygame.mixer.music.load('resources/background.wav')
+pygame.mixer.music.play(-1)
+explosion_sound = pygame.mixer.Sound('resources/explosion.wav')
+bullet_sound = pygame.mixer.Sound('resources/bullet.wav')
 
 
 class Ship:
@@ -29,9 +35,9 @@ class Ship:
         self.y = y
 
     def collide(self, x3, y3):
-        dis = abs(self.y + player_height // 2 - y3)
-        con = self.x - player_width // 2 <= x3 <= self.x + player_width
-        return (dis <= projectile_height or dis <= player_height) and con
+        distance = abs(self.y + player_height // 2 - y3)
+        condition = self.x - player_width // 2 <= x3 <= self.x + player_width
+        return (distance <= projectile_height or distance <= player_height) and condition
 
 
 class Bullet:
@@ -43,9 +49,9 @@ class Bullet:
         return self.y <= 0
 
     def collide_projectile(self, x3, y3):
-        dis = abs(self.y - y3)
-        con = x3 <= self.x <= x3 + projectile_width
-        return con and dis <= projectile_height
+        distance = abs(self.y - y3)
+        condition = x3 <= self.x <= x3 + projectile_width
+        return condition and distance <= projectile_height
 
 
 class Projectile:
@@ -62,7 +68,8 @@ class Projectile:
 def draw(x, y, x2, y2, y3, win, elapsed_time, projectiles, all_smashed_projectiles, width):
     time_text = font.render(f"Time: {round(elapsed_time)}s", True, "white")
     score = font.render(f"Score : {all_smashed_projectiles}", True, "red")
-    smashing_average = font.render(f"Smashing Average : {round(all_smashed_projectiles / elapsed_time, 2)} p/s",
+    smashing_average = font.render(f"Smashing Average : "
+                                   f"{round(all_smashed_projectiles / (elapsed_time + 0.01), 2)} p/s",
                                    True, "green")
     win.blit(img, (0, 0))
     win.blit(ship_img, (x, y))
@@ -77,6 +84,27 @@ def draw(x, y, x2, y2, y3, win, elapsed_time, projectiles, all_smashed_projectil
     pygame.display.update()
 
 
+def pause(win, width, height):
+    paused = True
+    paused_time = 0
+    while paused:
+        paused_time = 1 / fps
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_c:
+                    paused = False
+        pause_text = font2.render("Pause", True, "white")
+        continue_text = font.render("press c to continue", True, "white")
+        win.blit(pause_text, (width // 2 - pause_text.get_width() // 2,
+                              height // 2 - pause_text.get_height()))
+        win.blit(continue_text, (width // 2 - continue_text.get_width() // 2,
+                                 height // 2 - continue_text.get_height() + pause_text.get_height()))
+        pygame.display.update()
+    return paused_time
+
+
 def main():
     run = True
 # you can change the size of the first screen
@@ -85,7 +113,6 @@ def main():
     screen = pygame.display.set_mode((width, height))
     full_screen = True
     clock = pygame.time.Clock()
-    start_time = time.time()
     x = width // 2
     y = height - player_height
     x2 = x + player_width // 2 - bullet_width + 3
@@ -95,15 +122,16 @@ def main():
     projectiles = []
     all_smashed_projectiles = 0
     smashed_projectile = 0
+    elapsed_time = 0
 # you can change the configuration down below
     bullet_velocity = 20
     projectile_velocity = 1
-    time_add_projectile_velocity = 20
-    projectile_required_add_bullet_velocity = 10
+    time_to_add_projectile_velocity = 20
+    projectile_required_to_add_bullet_velocity = 10
 # end
     while run:
-        clock.tick(90)
-        elapsed_time = time.time() - start_time
+        clock.tick(fps)
+        elapsed_time += 1 / fps
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -121,6 +149,9 @@ def main():
                         height = 667
                         screen = pygame.display.set_mode((width, height))
                         full_screen = True
+                if event.key == pygame.K_p:
+                    pause(screen, width, height)
+                    elapsed_time -= pause(screen, width, height)
 
         ship = Ship(x, y)
         bullet = Bullet(x2, y2)
@@ -145,9 +176,10 @@ def main():
 
         for i in projectiles:
             if ship.collide(i.x, y3):
-                text = font.render(f"You lost you can restart again in 5s ", True, "white")
+                text = font.render(f"You lost you can restart again in {time_to_restart_the_game // 1000}s ",
+                                   True, "white")
                 time_spent = font.render(f"You lasted {round(elapsed_time)}s", True, "blue")
-                record = font.render(f"You destroyed {round(all_smashed_projectiles)} projectiles", True, "red")
+                record = font.render(f"You destroyed {all_smashed_projectiles} projectiles", True, "red")
                 screen.blit(text, (width // 2 - text.get_width() // 2,
                                    height // 2 - text.get_height()))
                 screen.blit(time_spent, (width // 2 - time_spent.get_width() // 2,
@@ -155,9 +187,15 @@ def main():
                 screen.blit(record, (width // 2 - record.get_width() // 2,
                                      height // 2 - record.get_height() + text.get_height() + time_spent.get_height()))
                 pygame.display.update()
-                pygame.time.delay(5000)
-                run = False
+                pygame.time.delay(time_to_restart_the_game)
+                elapsed_time = 0.01
+                all_smashed_projectiles = 0
+                smashed_projectile = 0
+                y3 = 0
+                x = width // 2
+                y = height - player_height
             if bullet.collide_projectile(i.x, y3):
+                explosion_sound.play()
                 projectiles.remove(i)
                 smashed_projectile += 1
                 all_smashed_projectiles += 1
@@ -165,6 +203,7 @@ def main():
         if bullet.collide():
             y2 = y
             x2 = x + player_width // 2 - bullet_width + 3
+            bullet_sound.play()
         if projectile.collide(height) or smashed_projectile == number_of_projectiles:
             y3 = 0
             smashed_projectile = 0
@@ -174,12 +213,12 @@ def main():
                                     width - projectile_width - player_width // 2)
                 projectile = Projectile(x3, y3)
                 projectiles.append(projectile)
-        if elapsed_time >= time_add_projectile_velocity:
+        if elapsed_time >= time_to_add_projectile_velocity:
             projectile_velocity += 0.5
-            time_add_projectile_velocity += time_add_projectile_velocity
-        if all_smashed_projectiles >= projectile_required_add_bullet_velocity:
+            time_to_add_projectile_velocity += time_to_add_projectile_velocity
+        if all_smashed_projectiles >= projectile_required_to_add_bullet_velocity:
             bullet_velocity += 2
-            projectile_required_add_bullet_velocity += projectile_required_add_bullet_velocity
+            projectile_required_to_add_bullet_velocity += projectile_required_to_add_bullet_velocity
         y2 -= bullet_velocity
         y3 += projectile_velocity
         draw(x, y, x2, y2, y3, screen, elapsed_time, projectiles, all_smashed_projectiles, width)
