@@ -131,6 +131,10 @@ def main():
     time_to_add_projectile_velocity = 20
     projectile_required_to_add_bullet_velocity = 10
 # end
+    clone_bullet_velocity = bullet_velocity
+    clone_projectile_velocity = projectile_velocity
+    clone_time_to_add_projectile_velocity = time_to_add_projectile_velocity
+    clone_projectile_required_to_add_bullet_velocity = projectile_required_to_add_bullet_velocity
     while run:
         clock.tick(fps)
         elapsed_time += 1 / fps
@@ -192,12 +196,17 @@ def main():
                                      height // 2 - record.get_height() + text.get_height() + time_spent.get_height()))
                 pygame.display.update()
                 pygame.time.delay(time_to_restart_the_game)
-                elapsed_time = 0.01
+                projectiles.clear()
                 all_smashed_projectiles = 0
                 smashed_projectile = 0
-                y3 = 0
+                elapsed_time = 0.01
                 x = width // 2
                 y = height - player_height
+                bullet_velocity = clone_bullet_velocity
+                projectile_velocity = clone_projectile_velocity
+                time_to_add_projectile_velocity = clone_time_to_add_projectile_velocity
+                projectile_required_to_add_bullet_velocity = clone_projectile_required_to_add_bullet_velocity
+
             if bullet.collide_projectile(i.x, y3):
                 explosion_sound.play()
                 projectiles.remove(i)
