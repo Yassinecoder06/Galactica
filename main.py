@@ -23,7 +23,7 @@ img = pygame.transform.scale(pygame.image.load('resources/field.jpg'),
                              (monitor_size[0], monitor_size[1]))
 ship_img = pygame.transform.scale(pygame.image.load('resources/space_ship.png'),
                                   (player_width, player_height))
-pygame.mixer.music.load('resources/Imagine_Dragons_Believer.mp3')
+pygame.mixer.music.load('resources/background.wav')
 pygame.mixer.music.play(-1)
 explosion_sound = pygame.mixer.Sound('resources/explosion.wav')
 bullet_sound = pygame.mixer.Sound('resources/bullet.wav')
