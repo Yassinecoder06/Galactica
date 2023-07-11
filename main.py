@@ -23,7 +23,7 @@ img = pygame.transform.scale(pygame.image.load('resources/field.jpg'),
                              (monitor_size[0], monitor_size[1]))
 ship_img = pygame.transform.scale(pygame.image.load('resources/space_ship.png'),
                                   (player_width, player_height))
-pygame.mixer.music.load('resources/background.wav')
+pygame.mixer.music.load('resources/Imagine_Dragons_Believer.mp3')
 pygame.mixer.music.play(-1)
 explosion_sound = pygame.mixer.Sound('resources/explosion.wav')
 bullet_sound = pygame.mixer.Sound('resources/bullet.wav')
@@ -212,7 +212,9 @@ def main():
                 projectiles.remove(i)
                 smashed_projectile += 1
                 all_smashed_projectiles += 1
-
+                
+        y2 -= bullet_velocity
+        y3 += projectile_velocity
         if bullet.collide():
             y2 = y
             x2 = x + player_width // 2 - bullet_width + 3
@@ -221,19 +223,12 @@ def main():
             y3 = 0
             smashed_projectile = 0
             projectiles.clear()
-            for _ in range(number_of_projectiles):
-                x3 = random.randint(projectile_width + player_width // 2,
-                                    width - projectile_width - player_width // 2)
-                projectile = Projectile(x3, y3)
-                projectiles.append(projectile)
         if elapsed_time >= time_to_add_projectile_velocity:
             projectile_velocity += 0.5
             time_to_add_projectile_velocity += time_to_add_projectile_velocity
         if all_smashed_projectiles >= projectile_required_to_add_bullet_velocity:
             bullet_velocity += 2
             projectile_required_to_add_bullet_velocity += projectile_required_to_add_bullet_velocity
-        y2 -= bullet_velocity
-        y3 += projectile_velocity
         draw(x, y, x2, y2, y3, screen, elapsed_time, projectiles, all_smashed_projectiles, width)
     pygame.quit()
 
