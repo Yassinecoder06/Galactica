@@ -131,6 +131,7 @@ def pause(win, width, height):
     paused_time = 0
     while paused:
         paused_time = 1 / fps
+        pygame.mixer.music.pause()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -195,6 +196,7 @@ def main():
     width, height, screen, full_screen = start(screen)
     while run:
         clock.tick(fps)
+        pygame.mixer.music.unpause()
         elapsed_time += 1 / fps
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
