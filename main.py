@@ -230,7 +230,7 @@ def main():
                                                      player1.y + player_width // 2 - bullet_width // 2,
                                                      bullet_height, bullet_width)
                         player1_bullets.append(bullet_player1)
-                    if event.key == pygame.K_LCTRL and len(player2_bullets) < max_bullet:
+                    if event.key == pygame.K_SPACE and len(player2_bullets) < max_bullet:
                         sound.bullet_sound()
                         bullet_player2 = pygame.Rect(player2.x + player_height,
                                                      player2.y + player_width // 2 - bullet_width // 2,
